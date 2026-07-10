@@ -1,0 +1,30 @@
+/* files — desktop file browser.
+ *
+ * App-style chrome via desktop-ui: hamburger menu in aux pane, main pane shows
+ * folder contents. Sidebar carries quick-access shortcuts. */
+
+html, body {
+  font-family: var(--fm-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "calt" 1, "liga" 1;
+  text-rendering: optimizeLegibility;
+}
+
+.files-sidebar {
+  padding: 16px 0;
+}
+
+.shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.files-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 16px;
+}

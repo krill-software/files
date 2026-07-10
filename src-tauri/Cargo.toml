@@ -1,0 +1,26 @@
+[package]
+name = "krill-files"
+version = "0.1.0"
+description = "A minimal file browser for Linux"
+authors = ["Filip"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = "2.0"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+tauri = { version = "2.0", features = ["shell-open", "os-all"] }
+tauri-plugin-cli = "2.0"
+tauri-plugin-dialog = "2.0"
+tauri-plugin-fs = "2.0"
+tauri-plugin-http = "2.0"
+krill-desktop-core = { git = "https://github.com/krill-software/desktop-core", tag = "v0.4.0" }
+
+[[bin]]
+name = "krill-files"
+path = "src/main.rs"
+
+[lib]
+name = "krill_files_lib"
+path = "src/lib.rs"
