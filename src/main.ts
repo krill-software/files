@@ -408,9 +408,15 @@ async function boot(): Promise<void> {
   elements.shortcuts = shortcuts;
 
   await loadState();
-  currentPath = state.lastFolder || (await invoke<string>("get_xdg_dirs")).then((dirs) => dirs[0]?.[1] || "/home");
 
   try {
+    if (state.lastFolder) {
+      currentPath = state.lastFolder;
+    } else {
+      const dirs = await invoke<Array<[string, string]>>("get_xdg_dirs");
+      currentPath = dirs[0]?.[1] || "/home";
+    }
+
     await renderSidebar();
     renderBreadcrumb();
     await listFiles();
