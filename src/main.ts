@@ -26,8 +26,6 @@ let state: AppState = { lastFolder: null, hiddenFiles: false };
 let currentPath = "";
 let files: FileInfo[] = [];
 let selectedIndex = -1;
-let sortColumn: "name" | "size" | "modified" = "name";
-let sortAsc = true;
 
 const elements = {
   fileList: null as HTMLElement | null,
@@ -97,7 +95,7 @@ async function listFiles(): Promise<void> {
       path: currentPath,
       showHidden: state.hiddenFiles,
     });
-    sortFiles();
+    files.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
     renderFileList();
     renderStatusBar();
   } catch (e) {
@@ -105,79 +103,21 @@ async function listFiles(): Promise<void> {
   }
 }
 
-function sortFiles(): void {
-  files.sort((a, b) => {
-    let aVal: string | number;
-    let bVal: string | number;
-
-    if (sortColumn === "name") {
-      aVal = a.name.toLowerCase();
-      bVal = b.name.toLowerCase();
-    } else if (sortColumn === "size") {
-      aVal = a.size;
-      bVal = b.size;
-    } else {
-      aVal = a.modified;
-      bVal = b.modified;
-    }
-
-    const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-    return sortAsc ? cmp : -cmp;
-  });
-}
-
 function renderFileList(): void {
   if (!elements.fileList) return;
 
-  elements.fileList.innerHTML = `
-    <div class="file-list-header">
-      <div class="col-name">
-        <button class="sort-btn" data-col="name">Name ${sortColumn === "name" ? (sortAsc ? "↑" : "↓") : ""}</button>
-      </div>
-      <div class="col-size">
-        <button class="sort-btn" data-col="size">Size ${sortColumn === "size" ? (sortAsc ? "↑" : "↓") : ""}</button>
-      </div>
-      <div class="col-modified">
-        <button class="sort-btn" data-col="modified">Modified ${sortColumn === "modified" ? (sortAsc ? "↑" : "↓") : ""}</button>
-      </div>
-    </div>
-    <div class="file-list-body"></div>
-  `;
-
-  const body = elements.fileList.querySelector(".file-list-body");
-  if (!body) return;
+  elements.fileList.innerHTML = "";
 
   files.forEach((file, idx) => {
     const row = document.createElement("div");
     row.className = `file-row ${idx === selectedIndex ? "selected" : ""}`;
-    row.innerHTML = `
-      <div class="col-name">${getFileIcon(file)} ${file.name}</div>
-      <div class="col-size">${formatSize(file.size)}</div>
-      <div class="col-modified">${formatDate(file.modified)}</div>
-    `;
+    row.innerHTML = `<span class="file-icon">${getFileIcon(file)}</span><span class="file-name">${file.name}</span>`;
 
     row.addEventListener("click", () => selectFile(idx));
     row.addEventListener("dblclick", () => openFile(idx));
     row.addEventListener("contextmenu", (e) => showContextMenu(e, idx));
 
-    body.appendChild(row);
-  });
-
-  document.querySelectorAll(".sort-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const col = (e.target as HTMLElement).getAttribute("data-col") as
-        | "name"
-        | "size"
-        | "modified";
-      if (sortColumn === col) {
-        sortAsc = !sortAsc;
-      } else {
-        sortColumn = col;
-        sortAsc = true;
-      }
-      sortFiles();
-      renderFileList();
-    });
+    elements.fileList!.appendChild(row);
   });
 }
 
@@ -435,9 +375,11 @@ async function boot(): Promise<void> {
   const main = chrome.mainContent!;
   main.innerHTML = `
     <div class="files-main">
-      <div class="breadcrumb-bar"></div>
+      <div class="nav-bar">
+        <div class="breadcrumb-bar"></div>
+        <div class="status-bar"></div>
+      </div>
       <div class="file-list"></div>
-      <div class="status-bar"></div>
     </div>
   `;
 
