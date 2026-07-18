@@ -8,20 +8,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import {
   Home, Folder, FileText, Download, Music, Image, Video,
-  File, FileJson, Code, GitBranch, Package, Archive,
+  File, FileJson, Code, Archive,
 } from "lucide";
 
 const appWindow = getCurrentWindow();
-
-const LUCIDE_ICONS: Record<string, (size: number, color: string) => string> = {
-  home: (size, color) => Home({ size, color }).outerHTML,
-  desktop: (size, color) => Folder({ size, color }).outerHTML,
-  documents: (size, color) => FileText({ size, color }).outerHTML,
-  downloads: (size, color) => Download({ size, color }).outerHTML,
-  music: (size, color) => Music({ size, color }).outerHTML,
-  pictures: (size, color) => Image({ size, color }).outerHTML,
-  videos: (size, color) => Video({ size, color }).outerHTML,
-};
 
 interface FileInfo {
   name: string;
@@ -68,41 +58,40 @@ function formatDate(secs: number): string {
 }
 
 function getFileIcon(file: FileInfo): HTMLElement {
-  const accentColor = "var(--fm-accent)";
   const iconContainer = document.createElement("span");
   iconContainer.className = "file-icon-lucide";
 
-  if (file.isDir) {
-    const folderIcon = document.createElement("div");
-    folderIcon.innerHTML = Folder({ size: 16, color: "#DD7596" }).outerHTML;
-    iconContainer.appendChild(folderIcon.firstElementChild as HTMLElement);
-  } else {
+  const iconMap: Record<string, any> = {
+    json: FileJson,
+    js: Code,
+    ts: Code,
+    py: Code,
+    rs: Code,
+    txt: FileText,
+    md: FileText,
+    pdf: FileText,
+    mp3: Music,
+    mp4: Video,
+    png: Image,
+    jpg: Image,
+    jpeg: Image,
+    gif: Image,
+    zip: Archive,
+    tar: Archive,
+    gz: Archive,
+  };
+
+  const IconComponent = file.isDir ? Folder : (() => {
     const ext = file.name.split(".").pop()?.toLowerCase() || "";
-    let svg: HTMLElement;
+    return iconMap[ext] || File;
+  })();
 
-    const iconMap: Record<string, any> = {
-      json: FileJson,
-      js: Code,
-      ts: Code,
-      py: Code,
-      rs: Code,
-      txt: FileText,
-      md: FileText,
-      pdf: FileText,
-      mp3: Music,
-      mp4: Video,
-      png: Image,
-      jpg: Image,
-      jpeg: Image,
-      gif: Image,
-      zip: Archive,
-      tar: Archive,
-      gz: Archive,
-    };
-
-    const IconComponent = iconMap[ext] || File;
+  const svg = IconComponent({ size: 16, color: "#DD7596" });
+  if (svg instanceof SVGElement) {
+    iconContainer.appendChild(svg);
+  } else if (typeof svg === "string") {
     const div = document.createElement("div");
-    div.innerHTML = IconComponent({ size: 16, color: "#DD7596" }).outerHTML;
+    div.innerHTML = svg;
     iconContainer.appendChild(div.firstElementChild as HTMLElement);
   }
 
@@ -320,14 +309,19 @@ async function renderSidebar(): Promise<void> {
     btn.className = "shortcut-btn";
 
     const IconComponent = iconMap[name] || Folder;
-    const iconDiv = document.createElement("div");
-    iconDiv.className = "shortcut-icon";
-    iconDiv.innerHTML = IconComponent({ size: 16, color: "#DD7596" }).outerHTML;
+    const svg = IconComponent({ size: 16, color: "#DD7596" });
 
     const label = document.createElement("span");
     label.textContent = name;
 
-    btn.appendChild(iconDiv.firstElementChild as HTMLElement);
+    if (svg instanceof SVGElement) {
+      btn.appendChild(svg);
+    } else if (typeof svg === "string") {
+      const div = document.createElement("div");
+      div.innerHTML = svg;
+      btn.appendChild(div.firstElementChild as HTMLElement);
+    }
+
     btn.appendChild(label);
     btn.addEventListener("click", () => navigateTo(path));
     elements.shortcuts.appendChild(btn);
