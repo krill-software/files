@@ -61,38 +61,43 @@ function getFileIcon(file: FileInfo): HTMLElement {
   const iconContainer = document.createElement("span");
   iconContainer.className = "file-icon-lucide";
 
-  const iconMap: Record<string, any> = {
-    json: FileJson,
-    js: Code,
-    ts: Code,
-    py: Code,
-    rs: Code,
-    txt: FileText,
-    md: FileText,
-    pdf: FileText,
-    mp3: Music,
-    mp4: Video,
-    png: Image,
-    jpg: Image,
-    jpeg: Image,
-    gif: Image,
-    zip: Archive,
-    tar: Archive,
-    gz: Archive,
-  };
+  try {
+    const iconMap: Record<string, any> = {
+      json: FileJson,
+      js: Code,
+      ts: Code,
+      py: Code,
+      rs: Code,
+      txt: FileText,
+      md: FileText,
+      pdf: FileText,
+      mp3: Music,
+      mp4: Video,
+      png: Image,
+      jpg: Image,
+      jpeg: Image,
+      gif: Image,
+      zip: Archive,
+      tar: Archive,
+      gz: Archive,
+    };
 
-  const IconComponent = file.isDir ? Folder : (() => {
-    const ext = file.name.split(".").pop()?.toLowerCase() || "";
-    return iconMap[ext] || File;
-  })();
+    const IconComponent = file.isDir ? Folder : (() => {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "";
+      return iconMap[ext] || File;
+    })();
 
-  const svg = IconComponent({ size: 16, color: "#DD7596" });
-  if (svg instanceof SVGElement) {
-    iconContainer.appendChild(svg);
-  } else if (typeof svg === "string") {
-    const div = document.createElement("div");
-    div.innerHTML = svg;
-    iconContainer.appendChild(div.firstElementChild as HTMLElement);
+    const svg = IconComponent({ size: 16, color: "#DD7596" });
+    if (svg instanceof SVGElement) {
+      iconContainer.appendChild(svg);
+    } else if (typeof svg === "string") {
+      const div = document.createElement("div");
+      div.innerHTML = svg;
+      iconContainer.appendChild(div.firstElementChild as HTMLElement);
+    }
+  } catch (e) {
+    console.error("Icon render error:", e);
+    iconContainer.textContent = file.isDir ? "📁" : "📄";
   }
 
   return iconContainer;
@@ -308,20 +313,26 @@ async function renderSidebar(): Promise<void> {
     const btn = document.createElement("button");
     btn.className = "shortcut-btn";
 
-    const IconComponent = iconMap[name] || Folder;
-    const svg = IconComponent({ size: 16, color: "#DD7596" });
+    try {
+      const IconComponent = iconMap[name] || Folder;
+      const svg = IconComponent({ size: 16, color: "#DD7596" });
+
+      if (svg instanceof SVGElement) {
+        btn.appendChild(svg);
+      } else if (typeof svg === "string") {
+        const div = document.createElement("div");
+        div.innerHTML = svg;
+        btn.appendChild(div.firstElementChild as HTMLElement);
+      }
+    } catch (e) {
+      console.error("Sidebar icon error:", e);
+      const iconSpan = document.createElement("span");
+      iconSpan.textContent = "📁";
+      btn.appendChild(iconSpan);
+    }
 
     const label = document.createElement("span");
     label.textContent = name;
-
-    if (svg instanceof SVGElement) {
-      btn.appendChild(svg);
-    } else if (typeof svg === "string") {
-      const div = document.createElement("div");
-      div.innerHTML = svg;
-      btn.appendChild(div.firstElementChild as HTMLElement);
-    }
-
     btn.appendChild(label);
     btn.addEventListener("click", () => navigateTo(path));
     elements.shortcuts.appendChild(btn);
@@ -417,44 +428,49 @@ function setupWindowControls(): void {
 }
 
 async function boot(): Promise<void> {
-  const version = await getVersion().catch(() => "0.0.0");
-
-  const chrome = mountChrome({
-    productName: "Files",
-    version,
-    layout: "app",
-    actions: {},
-    showAuxPane: true,
-    updater: true,
-  });
-
-  const main = chrome.mainContent!;
-  main.innerHTML = `
-    <div class="files-main">
-      <div class="nav-bar">
-        <div class="breadcrumb-bar"></div>
-        <div class="status-bar"></div>
-      </div>
-      <div class="file-list"></div>
-    </div>
-  `;
-
-  elements.fileList = main.querySelector(".file-list");
-  elements.breadcrumb = main.querySelector(".breadcrumb-bar");
-  elements.statusBar = main.querySelector(".status-bar");
-  elements.sidebar = chrome.aux!;
-
-  const sidebar = document.createElement("div");
-  sidebar.className = "files-sidebar";
-  const shortcuts = document.createElement("nav");
-  shortcuts.className = "shortcuts";
-  sidebar.appendChild(shortcuts);
-  elements.sidebar.appendChild(sidebar);
-  elements.shortcuts = shortcuts;
-
-  await loadState();
-
   try {
+    console.log("Boot starting...");
+    const version = await getVersion().catch(() => "0.0.0");
+
+    const chrome = mountChrome({
+      productName: "Files",
+      version,
+      layout: "app",
+      actions: {},
+      showAuxPane: true,
+      updater: true,
+    });
+
+    console.log("Chrome mounted");
+
+    const main = chrome.mainContent!;
+    main.innerHTML = `
+      <div class="files-main">
+        <div class="nav-bar">
+          <div class="breadcrumb-bar"></div>
+          <div class="status-bar"></div>
+        </div>
+        <div class="file-list"></div>
+      </div>
+    `;
+
+    elements.fileList = main.querySelector(".file-list");
+    elements.breadcrumb = main.querySelector(".breadcrumb-bar");
+    elements.statusBar = main.querySelector(".status-bar");
+    elements.sidebar = chrome.aux!;
+
+    const sidebar = document.createElement("div");
+    sidebar.className = "files-sidebar";
+    const shortcuts = document.createElement("nav");
+    shortcuts.className = "shortcuts";
+    sidebar.appendChild(shortcuts);
+    elements.sidebar.appendChild(sidebar);
+    elements.shortcuts = shortcuts;
+
+    console.log("DOM setup complete");
+
+    await loadState();
+
     if (state.lastFolder) {
       currentPath = state.lastFolder;
     } else {
@@ -462,11 +478,17 @@ async function boot(): Promise<void> {
       currentPath = dirs[0]?.[1] || "/home";
     }
 
+    console.log("Rendering sidebar...");
     await renderSidebar();
+    console.log("Rendering breadcrumb...");
     renderBreadcrumb();
+    console.log("Listing files...");
     await listFiles();
+    console.log("Setting up keyboard...");
     setupKeyboard();
+    console.log("Setting up window controls...");
     setupWindowControls();
+    console.log("Boot complete");
   } catch (e) {
     console.error("Boot failed:", e);
   }
