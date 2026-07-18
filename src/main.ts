@@ -6,8 +6,22 @@ import { getVersion } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { confirm } from "@tauri-apps/plugin-dialog";
+import {
+  Home, Folder, FileText, Download, Music, Image, Video,
+  File, FileJson, Code, GitBranch, Package, Archive,
+} from "lucide";
 
 const appWindow = getCurrentWindow();
+
+const LUCIDE_ICONS: Record<string, (size: number, color: string) => string> = {
+  home: (size, color) => Home({ size, color }).outerHTML,
+  desktop: (size, color) => Folder({ size, color }).outerHTML,
+  documents: (size, color) => FileText({ size, color }).outerHTML,
+  downloads: (size, color) => Download({ size, color }).outerHTML,
+  music: (size, color) => Music({ size, color }).outerHTML,
+  pictures: (size, color) => Image({ size, color }).outerHTML,
+  videos: (size, color) => Video({ size, color }).outerHTML,
+};
 
 interface FileInfo {
   name: string;
@@ -53,29 +67,46 @@ function formatDate(secs: number): string {
   return date.toLocaleDateString();
 }
 
-function getFileIcon(file: FileInfo): string {
-  if (file.isDir) return "📁";
-  const ext = file.name.split(".").pop()?.toLowerCase() || "";
-  const icons: Record<string, string> = {
-    pdf: "📄",
-    txt: "📝",
-    md: "📝",
-    json: "⚙",
-    js: "📜",
-    ts: "📜",
-    py: "🐍",
-    rs: "🦀",
-    png: "🖼",
-    jpg: "🖼",
-    jpeg: "🖼",
-    gif: "🖼",
-    mp3: "🎵",
-    mp4: "🎬",
-    zip: "📦",
-    tar: "📦",
-    gz: "📦",
-  };
-  return icons[ext] || "📄";
+function getFileIcon(file: FileInfo): HTMLElement {
+  const accentColor = "var(--fm-accent)";
+  const iconContainer = document.createElement("span");
+  iconContainer.className = "file-icon-lucide";
+
+  if (file.isDir) {
+    const folderIcon = document.createElement("div");
+    folderIcon.innerHTML = Folder({ size: 16, color: "#DD7596" }).outerHTML;
+    iconContainer.appendChild(folderIcon.firstElementChild as HTMLElement);
+  } else {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    let svg: HTMLElement;
+
+    const iconMap: Record<string, any> = {
+      json: FileJson,
+      js: Code,
+      ts: Code,
+      py: Code,
+      rs: Code,
+      txt: FileText,
+      md: FileText,
+      pdf: FileText,
+      mp3: Music,
+      mp4: Video,
+      png: Image,
+      jpg: Image,
+      jpeg: Image,
+      gif: Image,
+      zip: Archive,
+      tar: Archive,
+      gz: Archive,
+    };
+
+    const IconComponent = iconMap[ext] || File;
+    const div = document.createElement("div");
+    div.innerHTML = IconComponent({ size: 16, color: "#DD7596" }).outerHTML;
+    iconContainer.appendChild(div.firstElementChild as HTMLElement);
+  }
+
+  return iconContainer;
 }
 
 async function loadState(): Promise<void> {
@@ -111,7 +142,14 @@ function renderFileList(): void {
   files.forEach((file, idx) => {
     const row = document.createElement("div");
     row.className = `file-row ${idx === selectedIndex ? "selected" : ""}`;
-    row.innerHTML = `<span class="file-icon">${getFileIcon(file)}</span><span class="file-name">${file.name}</span>`;
+
+    const icon = getFileIcon(file);
+    const name = document.createElement("span");
+    name.className = "file-name";
+    name.textContent = file.name;
+
+    row.appendChild(icon);
+    row.appendChild(name);
 
     row.addEventListener("click", () => selectFile(idx));
     row.addEventListener("dblclick", () => openFile(idx));
@@ -240,20 +278,23 @@ function renderBreadcrumb(): void {
   elements.breadcrumb.innerHTML = "";
 
   const parts = currentPath.split("/").filter((p) => p);
-  const upBtn = document.createElement("button");
-  upBtn.className = "breadcrumb-btn";
-  upBtn.textContent = "↑";
-  upBtn.addEventListener("click", () => navigateUp());
-  elements.breadcrumb.appendChild(upBtn);
-
   let path = "";
+
   parts.forEach((part, idx) => {
     path += "/" + part;
+
     const btn = document.createElement("button");
     btn.className = "breadcrumb-btn";
-    btn.textContent = part || "/";
+    btn.textContent = part;
     btn.addEventListener("click", () => navigateTo(path));
     elements.breadcrumb.appendChild(btn);
+
+    if (idx < parts.length - 1) {
+      const slash = document.createElement("span");
+      slash.className = "breadcrumb-slash";
+      slash.textContent = " / ";
+      elements.breadcrumb.appendChild(slash);
+    }
   });
 }
 
@@ -263,10 +304,31 @@ async function renderSidebar(): Promise<void> {
   const dirs = await invoke<Array<[string, string]>>("get_xdg_dirs");
 
   elements.shortcuts.innerHTML = "";
+
+  const iconMap: Record<string, any> = {
+    Home: Home,
+    Desktop: Folder,
+    Documents: FileText,
+    Downloads: Download,
+    Music: Music,
+    Pictures: Image,
+    Videos: Video,
+  };
+
   dirs.forEach(([name, path]) => {
     const btn = document.createElement("button");
     btn.className = "shortcut-btn";
-    btn.textContent = name;
+
+    const IconComponent = iconMap[name] || Folder;
+    const iconDiv = document.createElement("div");
+    iconDiv.className = "shortcut-icon";
+    iconDiv.innerHTML = IconComponent({ size: 16, color: "#DD7596" }).outerHTML;
+
+    const label = document.createElement("span");
+    label.textContent = name;
+
+    btn.appendChild(iconDiv.firstElementChild as HTMLElement);
+    btn.appendChild(label);
     btn.addEventListener("click", () => navigateTo(path));
     elements.shortcuts.appendChild(btn);
   });
