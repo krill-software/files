@@ -7,6 +7,8 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { confirm } from "@tauri-apps/plugin-dialog";
 
+const appWindow = getCurrentWindow();
+
 interface FileInfo {
   name: string;
   path: string;
@@ -373,6 +375,51 @@ function setupKeyboard(): void {
   });
 }
 
+function setupWindowControls(): void {
+  setTimeout(() => {
+    const minimizeBtn = document.querySelector("#titlebar-min");
+    const maximizeBtn = document.querySelector("#titlebar-max");
+    const closeBtn = document.querySelector("#titlebar-close");
+
+    if (!minimizeBtn || !maximizeBtn || !closeBtn) {
+      console.warn("Window control buttons not found in DOM");
+      return;
+    }
+
+    minimizeBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        await appWindow.minimize();
+      } catch (err) {
+        console.error("Minimize failed:", err);
+      }
+    });
+
+    maximizeBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        const isMaximized = await appWindow.isMaximized();
+        if (isMaximized) {
+          await appWindow.unmaximize();
+        } else {
+          await appWindow.maximize();
+        }
+      } catch (err) {
+        console.error("Maximize failed:", err);
+      }
+    });
+
+    closeBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        await appWindow.close();
+      } catch (err) {
+        console.error("Close failed:", err);
+      }
+    });
+  }, 100);
+}
+
 async function boot(): Promise<void> {
   const version = await getVersion().catch(() => "0.0.0");
 
@@ -421,11 +468,12 @@ async function boot(): Promise<void> {
     renderBreadcrumb();
     await listFiles();
     setupKeyboard();
+    setupWindowControls();
   } catch (e) {
     console.error("Boot failed:", e);
   }
 
-  await getCurrentWindow().show().catch(() => {});
+  await appWindow.show().catch(() => {});
 }
 
 boot().catch((e) => {
