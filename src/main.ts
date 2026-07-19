@@ -104,7 +104,7 @@ function getFileIcon(file: FileInfo): HTMLElement {
       md: ICONS.file,
       pdf: ICONS.file,
       mp3: ICONS.music,
-      mp4: () => ICONS.download(),
+      mp4: ICONS.download,
       wav: ICONS.music,
       png: ICONS.image,
       jpg: ICONS.image,
@@ -328,7 +328,7 @@ async function renderSidebar(): Promise<void> {
     Downloads: ICONS.download,
     Music: ICONS.music,
     Pictures: ICONS.image,
-    Videos: () => ICONS.download(),
+    Videos: ICONS.download,
   };
 
   dirs.forEach(([name, path]) => {
