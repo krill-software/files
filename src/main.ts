@@ -6,36 +6,9 @@ import { getVersion } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { confirm } from "@tauri-apps/plugin-dialog";
+import { getLucideSVG } from "./icons";
 
 const appWindow = getCurrentWindow();
-
-function createSVG(path: string, color: string = "#DD7596"): SVGSVGElement {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("width", "16");
-  svg.setAttribute("height", "16");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("fill", "none");
-  svg.setAttribute("stroke", color);
-  svg.setAttribute("stroke-width", "2");
-  svg.setAttribute("stroke-linecap", "round");
-  svg.setAttribute("stroke-linejoin", "round");
-
-  const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  pathEl.setAttribute("d", path);
-  svg.appendChild(pathEl);
-
-  return svg;
-}
-
-const ICONS = {
-  folder: () => createSVG("M22 19a2 2 0 0 1-2.414-2.414l-3.47-8.308A2 2 0 0 0 12.96 6h-7.92a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2z"),
-  file: () => createSVG("M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M13 2v7h7"),
-  code: () => createSVG("M16 18l-4-4 4-4M8 6l4 4-4 4"),
-  image: () => createSVG("M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 13a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"),
-  download: () => createSVG("M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"),
-  music: () => createSVG("M9 18V5m0 0L4 9m5-4l5 4v9m0 0l-5-3m5 3l5-3"),
-  archive: () => createSVG("M9 3h6M9 3l1-1h4l1 1M9 3v18h6V3m-6 5h6m-6 6h6"),
-};
 
 interface FileInfo {
   name: string;
@@ -85,42 +58,42 @@ function getFileIcon(file: FileInfo): HTMLElement {
   const iconContainer = document.createElement("span");
   iconContainer.className = "file-icon-lucide";
 
-  let svg: SVGSVGElement;
+  let iconName: string;
 
   if (file.isDir) {
-    svg = ICONS.folder();
+    iconName = "folder";
   } else {
     const ext = file.name.split(".").pop()?.toLowerCase() || "";
-    const iconMap: Record<string, () => SVGSVGElement> = {
-      json: ICONS.code,
-      js: ICONS.code,
-      ts: ICONS.code,
-      py: ICONS.code,
-      rs: ICONS.code,
-      go: ICONS.code,
-      rb: ICONS.code,
-      php: ICONS.code,
-      txt: ICONS.file,
-      md: ICONS.file,
-      pdf: ICONS.file,
-      mp3: ICONS.music,
-      mp4: ICONS.download,
-      wav: ICONS.music,
-      png: ICONS.image,
-      jpg: ICONS.image,
-      jpeg: ICONS.image,
-      gif: ICONS.image,
-      webp: ICONS.image,
-      zip: ICONS.archive,
-      tar: ICONS.archive,
-      gz: ICONS.archive,
-      rar: ICONS.archive,
+    const iconMap: Record<string, string> = {
+      json: "file-json",
+      js: "code",
+      ts: "code",
+      py: "code",
+      rs: "code",
+      go: "code",
+      rb: "code",
+      php: "code",
+      txt: "file-text",
+      md: "file-text",
+      pdf: "file-text",
+      mp3: "music",
+      mp4: "video",
+      wav: "music",
+      png: "image",
+      jpg: "image",
+      jpeg: "image",
+      gif: "image",
+      webp: "image",
+      zip: "archive",
+      tar: "archive",
+      gz: "archive",
+      rar: "archive",
     };
 
-    const iconFn = iconMap[ext] || ICONS.file;
-    svg = iconFn();
+    iconName = iconMap[ext] || "file";
   }
 
+  const svg = getLucideSVG(iconName);
   iconContainer.appendChild(svg);
   return iconContainer;
 }
@@ -321,22 +294,22 @@ async function renderSidebar(): Promise<void> {
 
   elements.shortcuts.innerHTML = "";
 
-  const iconMap: Record<string, () => SVGSVGElement> = {
-    Home: ICONS.folder,
-    Desktop: ICONS.folder,
-    Documents: ICONS.file,
-    Downloads: ICONS.download,
-    Music: ICONS.music,
-    Pictures: ICONS.image,
-    Videos: ICONS.download,
+  const iconMap: Record<string, string> = {
+    Home: "home",
+    Desktop: "folder",
+    Documents: "file-text",
+    Downloads: "download",
+    Music: "music",
+    Pictures: "image",
+    Videos: "video",
   };
 
   dirs.forEach(([name, path]) => {
     const btn = document.createElement("button");
     btn.className = "shortcut-btn";
 
-    const iconFn = iconMap[name] || ICONS.folder;
-    const svg = iconFn();
+    const iconName = iconMap[name] || "folder";
+    const svg = getLucideSVG(iconName);
     btn.appendChild(svg);
 
     const label = document.createElement("span");
