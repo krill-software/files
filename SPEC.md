@@ -1,6 +1,6 @@
 # Files — Spec (v1)
 
-A minimal file browser for Linux. Sidebar quick-access (Home, Desktop, Documents, etc) + main pane shows the folder's contents. One folder per window.
+A minimal file browser for Linux. Sidebar quick-access (Home, Desktop, Documents, …) + main pane shows the folder's contents. One folder per window.
 
 ## Identity
 
@@ -10,7 +10,8 @@ A minimal file browser for Linux. Sidebar quick-access (Home, Desktop, Documents
 | productName | `Files` |
 | Binary | `krill-files` |
 | Identifier | `software.krill.files` |
-| Document format | folder path (`.krill-files.json` state stores last-open folder) |
+| Document | a folder path (CLI arg or `inode/directory` association) |
+| State | `$XDG_STATE_HOME/krill-files/state.json` — last folder, hidden-files flag, sort, recent folders |
 | Icon glyph | Lucide `folder-open` |
 
 ## The idea
@@ -19,29 +20,29 @@ A desktop file browser that does one thing: browse a folder and operate on its f
 
 ## Layout — app shell (mountChrome layout: "app")
 
-No titlebar or status line. Aux pane (left sidebar) carries quick shortcuts; main pane shows folder contents with breadcrumb path + file list.
+No titlebar or status line. Aux pane (left sidebar) carries quick shortcuts; main pane shows folder contents.
 
 - **Aux (sidebar):**
-  - Quick-access icons (Home, Desktop, Documents, Downloads, Music, Pictures, Videos)
-  - Recently opened folders (expandable list below)
-  - Mounted volumes/drives
-- **Main:**
-  - Breadcrumb path bar (clickable segments to navigate)
-  - File list: name / size / type (icon) / modified (sortable columns)
-  - Status bar at bottom: item count + total size
-- **Interactions:** click file → open with default; right-click → context menu; drag folder on sidebar → navigate.
+  - Quick-access shortcuts (Home + the XDG user dirs that exist)
+  - Recently opened folders (below, only when there are any)
+- **Main topbar:** back / up buttons, breadcrumb path (clickable segments, ellipsizes from the left), item count + total size at the right.
+- **Main:** sticky column header (name / size / modified — click to sort) over the file list.
+- **Interactions:** double-click or Enter opens (folders navigate, files go to `xdg-open`); right-click → context menu; hamburger menu mirrors every shortcut.
 
-## M1 — browse & basic ops
+## M1 — browse & basic ops *(done)*
 
-- **Sidebar shortcuts:** Home, Desktop, Documents, Downloads, Music, Pictures, Videos (via XDG dirs); recently opened folders auto-added; click to navigate.
-- **File list:** name, size, type (icon), modified date; sortable by column header.
+- **Sidebar shortcuts:** Home, Desktop, Documents, Downloads, Music, Pictures, Videos (via XDG user dirs; missing ones are skipped); recently opened folders auto-added; click to navigate.
+- **File list:** icon, name, size, modified; folders first; sortable by column header, remembered in state.
 - **Open files:** double-click or Enter → `xdg-open`.
-- **Context menu:** open, open with, delete, rename, copy path.
-- **Navigate:** breadcrumb path clicks; back/up buttons; keyboard Up/Down to select.
+- **Context menu:** open, rename, move to trash, copy path.
+- **Navigate:** breadcrumb clicks; back / up buttons; Backspace = up; keyboard Up/Down/Home/End to select.
+- **Rename:** F2 → inline editor on the row (stem preselected). Enter commits, Escape cancels.
+- **Trash, never delete:** Delete key / context menu moves to the freedesktop trash. No confirmation — it's recoverable.
 - **Hidden files:** Ctrl+H toggle, remembered in state.
-- **Sort:** click column; remembered in state.
-- **Remember last folder** in app state across sessions.
-- **Keyboard:** Enter opens; Delete deletes; F5 refreshes; Ctrl+L focus path input.
+- **Go to folder:** Ctrl+L swaps the breadcrumb for an editable path (`~` expands).
+- **Remember last folder** across sessions; a CLI folder argument wins; a folder that no longer opens falls back to Home.
+- **Errors** (unreadable folder, failed op) show inline — error placeholder in the list area, one-line message in the topbar status — never a dialog.
+- **Keyboard:** Enter opens; Delete trashes; F2 renames; F5 refreshes; Ctrl+Shift+C copies path; Alt+Left back; Alt+Up up.
 
 ## Non-goals (v1)
 
@@ -52,8 +53,9 @@ No titlebar or status line. Aux pane (left sidebar) carries quick shortcuts; mai
 ## Stack
 
 Tauri 2 + TypeScript + Vite + pnpm. `@krill-software/desktop-ui`
-`mountChrome({layout:"app"})`. Rust: `fs` module from `krill-desktop-core`
-+ `std::process::Command` for `xdg-open`.
+`mountChrome({layout:"app"})`. Rust: `fs` + `state` from `krill-desktop-core`,
+`dirs` for XDG user dirs, `trash` for deletion, `arboard` for the clipboard,
+`std::process::Command` for `xdg-open`. Lucide glyphs via the `lucide` package.
 
 ## Window
 
@@ -61,8 +63,8 @@ Canonical krill dimensions: 1296 × 800 default, 720 × 445 minimum, centered.
 
 ## Milestones
 
-1. **M1 — browse & ops.** *(this pass)* Sidebar quick-access, file list (name/size/type/date), open/delete/rename via context menu, state persistence.
-2. **M2 — polish.** Search/filter, toggle hidden, column sorting, breadcrumb nav refinements.
+1. **M1 — browse & ops.** *(done)* Everything above.
+2. **M2 — polish.** Type-to-filter (desktop-ui `buildFilterInput`), "Open with…", mounted volumes in the sidebar, multi-select.
 3. **M3 — advanced.** Batch ops, drag-to-copy, archives, file preview.
 
-> files starts on the proof-of-concept list in CLAUDE.md until the design bar is signed off. Don't release until it graduates.
+> files is on the proof-of-concept list in CLAUDE.md until the design bar is signed off. Don't release until it graduates.

@@ -1,38 +1,76 @@
-// Lucide icons as SVG strings - https://lucide.dev
-// Downloaded from https://github.com/lucide-icons/lucide/tree/main/icons
+// Lucide glyphs (https://lucide.dev). Explicit imports so only the icons the
+// app actually uses end up in the bundle.
+import {
+  ArrowLeft,
+  ArrowUp,
+  ChevronDown,
+  ChevronUp,
+  createElement,
+  Download,
+  File,
+  FileArchive,
+  FileAudio,
+  FileCode,
+  FileImage,
+  FileJson,
+  FileText,
+  FileVideo,
+  Folder,
+  House,
+  Image,
+  Monitor,
+  Music,
+  Video,
+  type IconNode,
+} from "lucide";
 
-const LUCIDE_SVGS: Record<string, string> = {
-  folder: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></svg>`,
-  file: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><polyline points="14 2 14 8 20 8" /></svg>`,
-  "file-text": `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><line x1="9" x2="15" y1="13" y2="13" /><line x1="9" x2="15" y1="17" y2="17" /></svg>`,
-  "file-json": `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M9 10a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1" /><path d="M15 10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1" /><path d="M11 14h2" /></svg>`,
-  code: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>`,
-  image: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></svg>`,
-  download: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>`,
-  music: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="18" r="3" /><circle cx="20" cy="16" r="3" /><path d="M9 18V4a2 2 0 0 0-2-2h0a2 2 0 0 0-2 2v14" /><path d="M23 16V6a2 2 0 0 0-2-2h0a2 2 0 0 0-2 2v12" /></svg>`,
-  video: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7" /><rect width="15" height="14" x="1" y="5" rx="2" ry="2" /></svg>`,
-  archive: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1" /><path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><line x1="10" x2="10" y1="12" y2="17" /><line x1="14" x2="14" y1="12" y2="17" /></svg>`,
-  home: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21H9a2 2 0 0 1-2-2V10.87a2 2 0 0 1 .84-1.6l6-4.5a2 2 0 0 1 2.32 0l6 4.5A2 2 0 0 1 22 10.87V19a2 2 0 0 1-2 2h-6" /><polyline points="9 21 9 13 15 13 15 21" /></svg>`,
-  "audio-lines": `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v3" /><path d="M6 6v11" /><path d="M10 3v18" /><path d="M14 8v7" /><path d="M18 5v13" /><path d="M22 10v3" /></svg>`,
-  "file-archive": `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v11.5" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M8 12v-1" /><path d="M8 18v-2" /><path d="M8 7V6" /><circle cx="8" cy="20" r="2" /></svg>`,
-  "file-play": `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9.5" /><polyline points="16 2 16 8 22 8" /><polygon points="12 14 8 17 8 11 12 14" /></svg>`,
+const ICONS: Record<string, IconNode> = {
+  "arrow-left": ArrowLeft,
+  "arrow-up": ArrowUp,
+  "chevron-down": ChevronDown,
+  "chevron-up": ChevronUp,
+  download: Download,
+  file: File,
+  "file-archive": FileArchive,
+  "file-audio": FileAudio,
+  "file-code": FileCode,
+  "file-image": FileImage,
+  "file-json": FileJson,
+  "file-text": FileText,
+  "file-video": FileVideo,
+  folder: Folder,
+  home: House,
+  image: Image,
+  monitor: Monitor,
+  music: Music,
+  video: Video,
 };
 
-export function getLucideSVG(name: string): SVGSVGElement {
-  const svgString = LUCIDE_SVGS[name];
-  if (!svgString) {
-    console.warn(`Lucide icon "${name}" not found`);
-    return document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  }
+/** Extension → glyph. Anything unlisted gets the plain `file`. */
+const EXT_ICONS: Record<string, string> = {
+  json: "file-json",
+  js: "file-code", ts: "file-code", py: "file-code", rs: "file-code", go: "file-code",
+  rb: "file-code", php: "file-code", c: "file-code", h: "file-code", cpp: "file-code",
+  sh: "file-code", css: "file-code", html: "file-code", toml: "file-code", yml: "file-code", yaml: "file-code",
+  txt: "file-text", md: "file-text", pdf: "file-text", csv: "file-text", log: "file-text",
+  mp3: "file-audio", wav: "file-audio", flac: "file-audio", aac: "file-audio", ogg: "file-audio", m4a: "file-audio",
+  mp4: "file-video", webm: "file-video", mkv: "file-video", mov: "file-video", avi: "file-video",
+  png: "file-image", jpg: "file-image", jpeg: "file-image", gif: "file-image", webp: "file-image", svg: "file-image",
+  zip: "file-archive", tar: "file-archive", gz: "file-archive", rar: "file-archive", "7z": "file-archive",
+  bz2: "file-archive", xz: "file-archive", zst: "file-archive", deb: "file-archive", appimage: "file-archive",
+};
 
-  const div = document.createElement("div");
-  div.innerHTML = svgString;
-  const svg = div.querySelector("svg") as SVGSVGElement;
-
-  // Set size and color
-  svg.setAttribute("width", "16");
-  svg.setAttribute("height", "16");
-  svg.style.color = "#DD7596";
-
+/** A Lucide glyph as an inline SVG, stroked in `currentColor`. */
+export function icon(name: string, size = 16): SVGElement {
+  const svg = createElement(ICONS[name] ?? File);
+  svg.setAttribute("width", String(size));
+  svg.setAttribute("height", String(size));
+  svg.setAttribute("aria-hidden", "true");
   return svg;
+}
+
+export function fileIcon(name: string, isDir: boolean): SVGElement {
+  if (isDir) return icon("folder");
+  const ext = name.includes(".") ? name.split(".").pop()!.toLowerCase() : "";
+  return icon(EXT_ICONS[ext] ?? "file");
 }

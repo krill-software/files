@@ -29,13 +29,13 @@
   },
   "plugins": {
     "cli": {
-      "description": "A file browser for Linux",
+      "description": "A minimal file browser for Linux",
       "args": [
         {
           "name": "folder",
           "index": 1,
           "takesValue": true,
-          "description": "Path to a folder to open"
+          "description": "Folder to open (defaults to the last one)"
         }
       ]
     },
@@ -59,8 +59,8 @@
       "icons/icon.png"
     ],
     "category": "System",
-    "shortDescription": "File browser",
-    "longDescription": "A minimal file browser for Linux. Browse folders, open files, manage them with basic operations.",
+    "shortDescription": "A minimal file browser for Linux",
+    "longDescription": "A minimal file browser for Linux. Browse a folder, open its files, rename, trash, and copy paths.",
     "fileAssociations": [
       {
         "ext": [
@@ -69,7 +69,7 @@
         "name": "Folder",
         "description": "Folder",
         "mimeType": "inode/directory",
-        "role": "Editor"
+        "role": "Viewer"
       }
     ],
     "linux": {

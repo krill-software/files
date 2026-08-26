@@ -23,7 +23,6 @@
     "core:app:allow-default-window-icon",
     "cli:default",
     "dialog:default",
-    "fs:default",
     "updater:default",
     "process:default"
   ]

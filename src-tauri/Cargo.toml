@@ -14,10 +14,15 @@ serde_json = "1.0"
 tauri = { version = "2", features = [] }
 tauri-plugin-cli = "2"
 tauri-plugin-dialog = "2"
-tauri-plugin-fs = "2"
 tauri-plugin-process = "2"
 tauri-plugin-updater = "2"
 krill-desktop-core = { git = "https://github.com/krill-software/desktop-core", tag = "v0.2.0" }
+# XDG user dirs (Desktop, Documents, …) for the sidebar shortcuts.
+dirs = "5"
+# Delete goes to the freedesktop trash, never rm.
+trash = "5"
+# Copy-path: the offer must outlive the call on Wayland, so a handle is kept in managed state.
+arboard = "3"
 
 [[bin]]
 name = "krill-files"
