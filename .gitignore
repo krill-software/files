@@ -1,18 +1,5 @@
-# dependencies
 node_modules
-pnpm-lock.yaml
-
-# build output
 dist
 src-tauri/target
-
-# dev
-.DS_Store
-*.swp
-*.swo
-*~
-.vscode
-.idea
-
-# tauri
-src-tauri/tauri.conf.json.bak
+src-tauri/gen
+release/
