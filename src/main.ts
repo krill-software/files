@@ -153,6 +153,13 @@ function renderFileList(): void {
     row.appendChild(icon);
     row.appendChild(name);
 
+    if (!file.isDir) {
+      const size = document.createElement("span");
+      size.className = "file-size";
+      size.textContent = formatSize(file.size);
+      row.appendChild(size);
+    }
+
     row.addEventListener("click", () => selectFile(idx));
     row.addEventListener("dblclick", () => openFile(idx));
     row.addEventListener("contextmenu", (e) => showContextMenu(e, idx));
@@ -275,29 +282,46 @@ async function navigateUp(): Promise<void> {
 }
 
 function renderBreadcrumb(): void {
-  if (!elements.breadcrumb) return;
+  const bar = elements.breadcrumb;
+  if (!bar) return;
 
-  elements.breadcrumb.innerHTML = "";
+  bar.innerHTML = "";
 
   const parts = currentPath.split("/").filter((p) => p);
   let path = "";
 
   parts.forEach((part, idx) => {
     path += "/" + part;
+    const target = path;
 
     const btn = document.createElement("button");
     btn.className = "breadcrumb-btn";
     btn.textContent = part;
-    btn.addEventListener("click", () => navigateTo(path));
-    elements.breadcrumb.appendChild(btn);
+    btn.addEventListener("click", () => navigateTo(target));
+    bar.appendChild(btn);
 
     if (idx < parts.length - 1) {
       const slash = document.createElement("span");
       slash.className = "breadcrumb-slash";
       slash.textContent = " / ";
-      elements.breadcrumb.appendChild(slash);
+      bar.appendChild(slash);
     }
   });
+
+  // Overflow ellipsizes to the LEFT: drop head crumbs behind a "…" until the
+  // tail of the path fits. Re-run on resize by the ResizeObserver in boot().
+  if (bar.scrollWidth > bar.clientWidth) {
+    const ell = document.createElement("span");
+    ell.className = "breadcrumb-slash";
+    ell.textContent = "… / ";
+    bar.prepend(ell);
+    while (bar.scrollWidth > bar.clientWidth && bar.children.length > 2) {
+      bar.children[1].remove();
+      if (bar.children[1]?.classList.contains("breadcrumb-slash")) {
+        bar.children[1].remove();
+      }
+    }
+  }
 }
 
 async function renderSidebar(): Promise<void> {
@@ -376,51 +400,6 @@ function setupKeyboard(): void {
   });
 }
 
-function setupWindowControls(): void {
-  setTimeout(() => {
-    const minimizeBtn = document.querySelector("#titlebar-min");
-    const maximizeBtn = document.querySelector("#titlebar-max");
-    const closeBtn = document.querySelector("#titlebar-close");
-
-    if (!minimizeBtn || !maximizeBtn || !closeBtn) {
-      console.warn("Window control buttons not found in DOM");
-      return;
-    }
-
-    minimizeBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      try {
-        await appWindow.minimize();
-      } catch (err) {
-        console.error("Minimize failed:", err);
-      }
-    });
-
-    maximizeBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      try {
-        const isMaximized = await appWindow.isMaximized();
-        if (isMaximized) {
-          await appWindow.unmaximize();
-        } else {
-          await appWindow.maximize();
-        }
-      } catch (err) {
-        console.error("Maximize failed:", err);
-      }
-    });
-
-    closeBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      try {
-        await appWindow.close();
-      } catch (err) {
-        console.error("Close failed:", err);
-      }
-    });
-  }, 100);
-}
-
 async function boot(): Promise<void> {
   try {
     console.log("Boot starting...");
@@ -440,17 +419,27 @@ async function boot(): Promise<void> {
     const main = chrome.mainContent!;
     main.innerHTML = `
       <div class="files-main">
-        <div class="nav-bar">
-          <div class="breadcrumb-bar"></div>
-          <div class="status-bar"></div>
-        </div>
         <div class="file-list"></div>
       </div>
     `;
 
+    // Breadcrumbs live in the main topbar, on the same strip as the window
+    // controls. The drag-region attribute keeps gaps between crumbs draggable;
+    // the crumb buttons themselves lack it, so they stay clickable. The status
+    // (count · size) sits between the crumbs and the window controls and never
+    // shrinks — the crumbs ellipsize instead.
+    const breadcrumb = document.createElement("div");
+    breadcrumb.className = "breadcrumb-bar";
+    breadcrumb.setAttribute("data-tauri-drag-region", "");
+    const statusBar = document.createElement("div");
+    statusBar.className = "topbar-status";
+    statusBar.setAttribute("data-tauri-drag-region", "");
+    chrome.viewport.querySelector(".main-topbar")?.prepend(breadcrumb, statusBar);
+    new ResizeObserver(() => renderBreadcrumb()).observe(breadcrumb);
+
     elements.fileList = main.querySelector(".file-list");
-    elements.breadcrumb = main.querySelector(".breadcrumb-bar");
-    elements.statusBar = main.querySelector(".status-bar");
+    elements.breadcrumb = breadcrumb;
+    elements.statusBar = statusBar;
     elements.sidebar = chrome.aux!;
 
     const sidebar = document.createElement("div");
@@ -480,8 +469,6 @@ async function boot(): Promise<void> {
     await listFiles();
     console.log("Setting up keyboard...");
     setupKeyboard();
-    console.log("Setting up window controls...");
-    setupWindowControls();
     console.log("Boot complete");
   } catch (e) {
     console.error("Boot failed:", e);

@@ -78,18 +78,15 @@ html, body {
   min-height: 0;
 }
 
-.nav-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(48, 52, 63, 0.12);
-}
-
 .breadcrumb-bar {
   display: flex;
   gap: 0;
   align-items: center;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  /* topbar's 8px + this = the file rows' 16px left inset */
+  padding-left: 8px;
 }
 
 .breadcrumb-btn {
@@ -112,9 +109,13 @@ html, body {
   margin: 0 2px;
 }
 
-.status-bar {
+.topbar-status {
+  flex-shrink: 0;
   font-size: 12px;
   color: var(--fm-muted);
+  white-space: nowrap;
+  margin-right: 8px;
+  font-variant-numeric: tabular-nums;
 }
 
 .file-list {
@@ -174,6 +175,14 @@ html, body {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--fm-muted);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
