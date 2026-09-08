@@ -58,7 +58,7 @@
       "icons/128x128@2x.png",
       "icons/icon.png"
     ],
-    "category": "System",
+    "category": "Utility",
     "shortDescription": "A minimal file browser for Linux",
     "longDescription": "A minimal file browser for Linux. Browse a folder, open its files, rename, trash, and copy paths.",
     "fileAssociations": [
