@@ -1,0 +1,209 @@
+---
+layout: app
+tagline: a minimal file browser for Linux
+description: A minimal file browser for Linux. One folder per window, XDG shortcuts in the sidebar, sortable columns, rename and trash. No tabs, no tree, no settings.
+og_description: Browse a folder, open its files, rename, trash. One folder per window. Free and open source.
+lede: Open a folder and see what's in it. Sidebar shortcuts to the usual places, a breadcrumb you can click, columns you can sort — and rename, trash, and open-with-the-system on the files you find.
+features_heading: One folder. The things you actually do in it.
+features:
+  - tag: Sidebar
+    title: The places you already have
+    blurb: Home, Desktop, Documents, Downloads, Music, Pictures, Videos — the XDG user folders that exist on your system, plus the folders you opened recently. Click to jump.
+  - tag: Browse
+    title: Breadcrumb, back, up
+    blurb: Every segment of the path is a button. Back and Up sit beside it, Backspace goes up, and the item count with total size stays at the right while long paths ellipsize from the left.
+  - tag: Columns
+    title: Name, size, modified
+    blurb: Folders first, then files. Click a column header to sort by it; click again to flip. Your sort is remembered between sessions.
+  - tag: Rename · Trash
+    title: Recoverable by design
+    blurb: F2 renames inline with the stem preselected. Delete moves to the freedesktop trash — never a permanent delete, so there's no confirmation to click through.
+  - tag: Open
+    title: The system opens it
+    blurb: Double-click or Enter hands a file to xdg-open, so it lands in whatever app you already use. Folders open in the same window; a second window is a second folder.
+  - tag: Tauri · Rust
+    title: Native Linux
+    blurb: Small binary, AppImage and .deb, a real inode/directory association, in-app updater. Built on Tauri and Rust — no Electron.
+extension: ""
+mock:
+  chrome: app
+---
+<style>
+  /* App-layout mock (mock.chrome: app — no titlebar / status line):
+   * XDG shortcuts + recent folders in the aux pane, the folder listing
+   * in the main pane with back / up / breadcrumb / status in its topbar
+   * and the window controls at the right. Glyphs are drawn in the
+   * accent, as in the app. */
+  .fl-app {
+    display: grid;
+    grid-template-columns: 190px 1fr;
+    min-height: 400px;
+    font-family: var(--sans);
+    font-size: 13px;
+  }
+  .fl-aux {
+    border-right: 1px solid var(--rule);
+    padding: 10px 8px;
+  }
+  .fl-burger { color: var(--muted); font-size: 14px; padding: 2px 10px 12px; }
+  .fl-shortcut {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 4px;
+    color: var(--ink);
+  }
+  .fl-shortcut.on { background: var(--rule-strong); }
+  .fl-shortcut svg, .fl-row svg { width: 15px; height: 15px; flex: none; color: var(--accent); }
+  .fl-section {
+    margin: 14px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--rule-strong);
+  }
+  .fl-section-title {
+    padding: 6px 12px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .fl-recent { padding: 6px 12px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .fl-main { display: flex; flex-direction: column; min-width: 0; }
+  .fl-topbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px 8px 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .fl-nav {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    color: var(--ink);
+  }
+  .fl-nav svg { width: 14px; height: 14px; }
+  .fl-nav.off { opacity: 0.35; }
+  .fl-crumbs { flex: 1; min-width: 0; padding-left: 8px; white-space: nowrap; overflow: hidden; }
+  .fl-crumbs .sep { color: var(--muted); margin: 0 4px; }
+  .fl-status { font-size: 12px; color: var(--muted); margin: 0 14px 0 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .fl-winbtns { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: 2px; }
+
+  .fl-head, .fl-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+  }
+  .fl-head {
+    height: 28px;
+    padding-left: 43px;
+    border-bottom: 1px solid var(--rule-strong);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .fl-head .col-name { color: var(--ink); display: inline-flex; align-items: center; gap: 4px; }
+  .fl-head .col-name svg { width: 12px; height: 12px; color: var(--accent); }
+  .fl-row { height: 32px; border-bottom: 1px solid var(--rule); color: var(--ink); }
+  .fl-row:last-child { border-bottom: none; }
+  .fl-row.sel { background: rgba(221, 117, 150, 0.12); }
+  .col-name, .fl-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .col-size, .fl-size { flex: 0 0 72px; text-align: right; }
+  .col-mod, .fl-mod { flex: 0 0 96px; text-align: right; }
+  .fl-size, .fl-mod { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  @media (max-width: 720px) {
+    .fl-app { grid-template-columns: 1fr; }
+    .fl-aux { display: none; }
+    .fl-mod, .col-mod { display: none; }
+  }
+</style>
+<div class="fl-app">
+  <aside class="fl-aux">
+    <div class="fl-burger">☰</div>
+    <div class="fl-shortcut">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      Home
+    </div>
+    <div class="fl-shortcut">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      Desktop
+    </div>
+    <div class="fl-shortcut on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8M16 13H8M16 17H8"/></svg>
+      Documents
+    </div>
+    <div class="fl-shortcut">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>
+      Downloads
+    </div>
+    <div class="fl-shortcut">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      Music
+    </div>
+    <div class="fl-shortcut">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+      Pictures
+    </div>
+    <div class="fl-shortcut">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+      Videos
+    </div>
+    <div class="fl-section">
+      <div class="fl-section-title">Recent</div>
+      <div class="fl-recent">krill</div>
+      <div class="fl-recent">2026-tax</div>
+    </div>
+  </aside>
+  <div class="fl-main">
+    <div class="fl-topbar">
+      <span class="fl-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M19 12H5"/></svg></span>
+      <span class="fl-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7M12 19V5"/></svg></span>
+      <span class="fl-crumbs">home<span class="sep">/</span>filip<span class="sep">/</span>Documents<span class="sep">/</span>krill</span>
+      <span class="fl-status">7 items · 12.4 MB</span>
+      <span class="fl-winbtns">─ ▢ ✕</span>
+    </div>
+    <div class="fl-head">
+      <span class="col-name">Name <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></span>
+      <span class="col-size">Size</span>
+      <span class="col-mod">Modified</span>
+    </div>
+    <div class="fl-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+      <span class="fl-name">drafts</span><span class="fl-size">—</span><span class="fl-mod">2 Sep</span>
+    </div>
+    <div class="fl-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+      <span class="fl-name">invoices</span><span class="fl-size">—</span><span class="fl-mod">14 Aug</span>
+    </div>
+    <div class="fl-row sel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8M16 13H8M16 17H8"/></svg>
+      <span class="fl-name">notes.md</span><span class="fl-size">4.2 KB</span><span class="fl-mod">09:41</span>
+    </div>
+    <div class="fl-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8M16 13H8M16 17H8"/></svg>
+      <span class="fl-name">budget.csv</span><span class="fl-size">18 KB</span><span class="fl-mod">Yesterday</span>
+    </div>
+    <div class="fl-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><circle cx="10" cy="12" r="2"/><path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22"/></svg>
+      <span class="fl-name">cover.png</span><span class="fl-size">1.8 MB</span><span class="fl-mod">30 Aug</span>
+    </div>
+    <div class="fl-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8M16 13H8M16 17H8"/></svg>
+      <span class="fl-name">talk.pdf</span><span class="fl-size">2.1 MB</span><span class="fl-mod">21 Aug</span>
+    </div>
+    <div class="fl-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm0 0v-5l6-2v5"/><circle cx="12" cy="17" r="2"/></svg>
+      <span class="fl-name">demo.wav</span><span class="fl-size">8.3 MB</span><span class="fl-mod">3 Jul</span>
+    </div>
+  </div>
+</div>

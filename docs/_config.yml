@@ -1,0 +1,8 @@
+remote_theme: krill-software/docs-theme@v4.3
+plugins:
+  - jekyll-remote-theme
+
+title: Files
+slug: files
+brand: files
+version: 0.1.0
