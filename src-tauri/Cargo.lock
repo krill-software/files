@@ -1887,7 +1887,7 @@ dependencies = [
 
 [[package]]
 name = "krill-files"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "arboard",
  "dirs 5.0.1",

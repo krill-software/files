@@ -1,7 +1,7 @@
 import "@krill-software/desktop-ui/styles";
 import "./styles.css";
 
-import { buildErrorState, mountChrome, showBootError } from "@krill-software/desktop-ui";
+import { buildErrorState, buildFilterInput, mountChrome, showBootError } from "@krill-software/desktop-ui";
 import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import { getMatches } from "@tauri-apps/plugin-cli";
@@ -34,7 +34,11 @@ const COLUMNS: Array<{ key: SortKey; label: string }> = [
 
 let state: AppState = { lastFolder: null, hiddenFiles: false, sortKey: "name", sortDesc: false, recent: [] };
 let currentPath = "";
+/** Everything in the current folder, sorted. */
+let allFiles: FileInfo[] = [];
+/** What's on screen: `allFiles` narrowed by the topbar filter. */
 let files: FileInfo[] = [];
+let filterText = "";
 let rows: HTMLElement[] = [];
 let selectedIndex = -1;
 /** Back stack — folders left via navigation, most recent last. */
@@ -55,6 +59,7 @@ const el = {
   shortcuts: document.createElement("nav"),
   recentSection: document.createElement("div"),
   recent: document.createElement("div"),
+  filter: buildFilterInput({ placeholder: "Filter…", onChange: setFilter }),
   error: buildErrorState({ message: "Couldn't open this folder." }),
 };
 
@@ -119,7 +124,8 @@ function renderStatus(): void {
   window.clearTimeout(statusTimer);
   const n = files.length;
   const total = files.reduce((sum, f) => sum + f.size, 0);
-  el.status.textContent = `${n} ${n === 1 ? "item" : "items"} · ${formatSize(total)}`;
+  const count = filterText ? `${n} of ${allFiles.length}` : `${n} ${n === 1 ? "item" : "items"}`;
+  el.status.textContent = `${count} · ${formatSize(total)}`;
 }
 
 /** Briefly replace the count with a one-line message (an error, "Path copied"). */
@@ -134,7 +140,7 @@ function flash(message: unknown): void {
 function sortFiles(): void {
   const dir = state.sortDesc ? -1 : 1;
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
-  files.sort((a, b) => {
+  allFiles.sort((a, b) => {
     if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
     let cmp = 0;
     if (state.sortKey === "size") cmp = a.size - b.size;
@@ -142,6 +148,28 @@ function sortFiles(): void {
     if (cmp === 0) cmp = collator.compare(a.name, b.name);
     return cmp * dir;
   });
+  applyFilter();
+}
+
+/** Case-insensitive substring match on the name; empty shows everything. */
+function applyFilter(): void {
+  const needle = filterText.trim().toLowerCase();
+  files = needle ? allFiles.filter((f) => f.name.toLowerCase().includes(needle)) : allFiles;
+}
+
+function setFilter(value: string): void {
+  if (value === filterText) return;
+  filterText = value;
+  const keep = files[selectedIndex]?.path;
+  applyFilter();
+  renderList();
+  reselect(keep);
+  renderStatus();
+}
+
+function clearFilter(): void {
+  el.filter.input.value = "";
+  setFilter("");
 }
 
 function renderHeader(): void {
@@ -221,8 +249,9 @@ function reselect(path: string | undefined): void {
 async function listFiles(): Promise<boolean> {
   const keep = files[selectedIndex]?.path;
   try {
-    files = await invoke<FileInfo[]>("list_files", { path: currentPath, showHidden: state.hiddenFiles });
+    allFiles = await invoke<FileInfo[]>("list_files", { path: currentPath, showHidden: state.hiddenFiles });
   } catch (e) {
+    allFiles = [];
     files = [];
     selectedIndex = -1;
     renderList();
@@ -249,6 +278,7 @@ async function navigateTo(path: string, opts: { push?: boolean } = {}): Promise<
   const prev = currentPath;
   currentPath = path;
   selectedIndex = -1;
+  clearFilter();
   renderBreadcrumb();
   const ok = await listFiles();
   // Push even on failure so Back returns to the folder that worked. On
@@ -566,6 +596,7 @@ async function boot(): Promise<void> {
         group: "view",
         items: [
           { label: "Show hidden files", shortcut: "Ctrl+H", action: toggleHidden },
+          { label: "Filter", shortcut: "Ctrl+F", action: () => el.filter.input.focus() },
           { label: "Refresh", shortcut: "F5", action: () => void listFiles() },
         ],
       },
@@ -586,16 +617,31 @@ async function boot(): Promise<void> {
     },
   });
 
-  // Main topbar: [←] [↑] crumbs … status [— □ ×]. The drag-region attribute
-  // keeps the gaps between crumbs draggable; the buttons lack it and stay
-  // clickable. The status never shrinks — the crumbs ellipsize instead.
+  // Main topbar: [←] [↑] crumbs … filter status [— □ ×]. The drag-region
+  // attribute keeps the gaps between crumbs draggable; the buttons lack it
+  // and stay clickable. Filter and status never shrink — the crumbs
+  // ellipsize instead.
   el.back = topbarButton("Back", "arrow-left", () => void goBack());
   el.up = topbarButton("Up", "arrow-up", () => void goUp());
   el.breadcrumb.className = "breadcrumb-bar";
   el.breadcrumb.setAttribute("data-tauri-drag-region", "");
   el.status.className = "topbar-status";
   el.status.setAttribute("data-tauri-drag-region", "");
-  chrome.viewport.querySelector(".main-topbar")!.prepend(el.back, el.up, el.breadcrumb, el.status);
+  el.filter.element.classList.add("topbar-filter");
+  el.filter.input.addEventListener("keydown", (e) => {
+    // Escape clears and hands focus back so the list bindings work again;
+    // Enter opens the first match (typing a name then Enter is the point).
+    if (e.key === "Escape") {
+      clearFilter();
+      el.filter.input.blur();
+    } else if (e.key === "Enter" && files.length > 0) {
+      el.filter.input.blur();
+      void open(selectedIndex >= 0 ? selectedIndex : 0);
+    }
+  });
+  chrome.viewport
+    .querySelector(".main-topbar")!
+    .prepend(el.back, el.up, el.breadcrumb, el.filter.element, el.status);
   new ResizeObserver(() => renderBreadcrumb()).observe(el.breadcrumb);
 
   // Main content: sticky column header over the row list; the error

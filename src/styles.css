@@ -125,6 +125,19 @@ html, body {
   color: var(--fm-text);
 }
 
+/* Compact the shared filter input to the 22px topbar row. */
+.topbar-filter {
+  flex-shrink: 0;
+  width: 160px;
+  padding-bottom: 0;
+}
+
+.topbar-filter .fm-filter-input {
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 4px;
+}
+
 .topbar-status {
   flex-shrink: 0;
   font-size: 12px;
